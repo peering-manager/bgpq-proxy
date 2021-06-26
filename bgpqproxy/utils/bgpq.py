@@ -7,7 +7,17 @@ from flask import current_app
 from flask_restful import Resource, reqparse
 
 
-class BGPqAS(Resource):
+class ApiResource(Resource):
+    def get_args(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument("depth", type=int, default=0)
+        parser.add_argument("invalidate", type=bool, default=False)
+        parser.add_argument("no_cache", type=bool, default=False)
+
+        return parser.parse_args()
+
+
+class BGPqAS(ApiResource):
     def get(self, asn):
         try:
             int(asn)
@@ -15,34 +25,66 @@ class BGPqAS(Resource):
         except ValueError:
             pass
 
+        args = self.get_args()
         bgpq = BGPqRunner()
 
-        return {
-            "ipv4": bgpq.get_prefixes(asn, AF_INET),
-            "ipv6": bgpq.get_prefixes(asn, AF_INET6),
-        }
+        try:
+            return {
+                "ipv4": bgpq.get_prefixes(
+                    asn,
+                    AF_INET,
+                    invalidate=args["invalidate"],
+                    no_cache=args["no_cache"],
+                ),
+                "ipv6": bgpq.get_prefixes(
+                    asn,
+                    AF_INET6,
+                    invalidate=args["invalidate"],
+                    no_cache=args["no_cache"],
+                ),
+            }
+        except ValueError as e:
+            return {"error": str(e)}, 400
 
 
-class BGPqASSet(Resource):
+class BGPqASSet(ApiResource):
     def get(self, as_set):
-        # Parse depth parameter if given, assume 0 otherwise
-        parser = reqparse.RequestParser()
-        parser.add_argument("depth", type=int, default=0)
-        args = parser.parse_args()
-
+        args = self.get_args()
         bgpq = BGPqRunner()
 
-        return {
-            "ipv4": bgpq.get_prefixes(as_set, AF_INET, depth=args["depth"]),
-            "ipv6": bgpq.get_prefixes(as_set, AF_INET6, depth=args["depth"]),
-        }
+        try:
+            return {
+                "ipv4": bgpq.get_prefixes(
+                    as_set,
+                    AF_INET,
+                    depth=args["depth"],
+                    invalidate=args["invalidate"],
+                    no_cache=args["no_cache"],
+                ),
+                "ipv6": bgpq.get_prefixes(
+                    as_set,
+                    AF_INET6,
+                    depth=args["depth"],
+                    invalidate=args["invalidate"],
+                    no_cache=args["no_cache"],
+                ),
+            }
+        except ValueError as e:
+            return {"error": str(e)}, 400
 
 
 class BGPqRunner(object):
     def __init__(self):
         self._path = current_app.config["BGPQ_PATH"]
 
-    def get_prefixes(self, irr_object, address_family=AF_INET, depth=0):
+    def get_prefixes(
+        self,
+        irr_object,
+        address_family=AF_INET,
+        depth=0,
+        invalidate=False,
+        no_cache=False,
+    ):
         """
         Call a subprocess to expand the given AS-SET for an IP version.
         """
@@ -52,9 +94,13 @@ class BGPqRunner(object):
         cache_key = f"{irr_object}_{address_family}"
         cached_value = redis_client().get(cache_key)
 
-        # Return a cached value if available
-        if cached_value:
-            return json.loads(cached_value)
+        # Don't return a cached result if user asked set `no_cache`
+        if not no_cache and cached_value:
+            if invalidate:
+                redis_client().delete(cache_key)
+            else:
+                # Return a cached value if available
+                return json.loads(cached_value)
 
         # Build bgpq(3|4) arguments to get a JSON result
         command = [
@@ -83,11 +129,13 @@ class BGPqRunner(object):
         if process.returncode != 0:
             error_log = f"{self._path} exit code is {process.returncode}"
             if err and err.strip():
-                error_log += f", stderr: {err}"
+                error_log += f", stderr: {err.decode()}"
             raise ValueError(error_log)
 
         # Parse stdout as JSON and cache the result
         prefixes = json.loads(out.decode())["prefixes"]
-        redis_client().set(cache_key, json.dumps(prefixes), ex=86400)
+        if not invalidate and not no_cache:
+            # Cache result only if `invalidate` and `no_cache` are not set
+            redis_client().set(cache_key, json.dumps(prefixes), ex=86400)
 
         return prefixes
