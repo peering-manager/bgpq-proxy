@@ -52,6 +52,7 @@ class BGPqRunner(object):
         cache_key = f"{irr_object}_{address_family}"
         cached_value = redis_client().get(cache_key)
 
+        # Return a cached value if available
         if cached_value:
             return json.loads(cached_value)
 
@@ -72,17 +73,20 @@ class BGPqRunner(object):
         # And finally give the IRR object
         command.append(irr_object)
 
+        # Execute the process and catch stdout/stderr
         process = subprocess.Popen(
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         out, err = process.communicate()
 
+        # Find out if an error occured
         if process.returncode != 0:
-            error_log = f"bgpq3 exit code is {process.returncode}"
+            error_log = f"{self._path} exit code is {process.returncode}"
             if err and err.strip():
                 error_log += f", stderr: {err}"
             raise ValueError(error_log)
 
+        # Parse stdout as JSON and cache the result
         prefixes = json.loads(out.decode())["prefixes"]
         redis_client().set(cache_key, json.dumps(prefixes), ex=86400)
 
