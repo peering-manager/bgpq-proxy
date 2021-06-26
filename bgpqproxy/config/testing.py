@@ -1,7 +1,7 @@
 from os import getenv
 
-from config.development import BaseConfig as DevelopmentConfig
+from bgpqproxy.config.development import BaseConfig as DevConfig
 
 
-class BaseConfig(DevelopmentConfig):
-    REDIS_DB = getenv("REDIS_DB", "1")
+class BaseConfig(DevConfig):
+    super().REDIS["db"] = getenv("REDIS_DB", "1")

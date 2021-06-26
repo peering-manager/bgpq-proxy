@@ -2,7 +2,7 @@ import json
 import subprocess
 from socket import AF_INET, AF_INET6
 
-import redis
+from bgpqproxy.redis import redis_client
 from flask import current_app
 from flask_restful import Resource, reqparse
 
@@ -41,11 +41,6 @@ class BGPqASSet(Resource):
 class BGPqRunner(object):
     def __init__(self):
         self._path = current_app.config["BGPQ_PATH"]
-        self._redis_client = redis.Redis(
-            host=current_app.config["REDIS_HOST"],
-            port=current_app.config["REDIS_PORT"],
-            db=current_app.config["REDIS_DB"],
-        )
 
     def get_prefixes(self, irr_object, address_family=AF_INET, depth=0):
         """
@@ -55,7 +50,7 @@ class BGPqRunner(object):
             raise ValueError(f"Unsupported IP address family: {address_family}")
 
         cache_key = f"{irr_object}_{address_family}"
-        cached_value = self._redis_client.get(cache_key)
+        cached_value = redis_client().get(cache_key)
 
         if cached_value:
             return json.loads(cached_value)
@@ -89,6 +84,6 @@ class BGPqRunner(object):
             raise ValueError(error_log)
 
         prefixes = json.loads(out.decode())["prefixes"]
-        self._redis_client.set(cache_key, json.dumps(prefixes), ex=86400)
+        redis_client().set(cache_key, json.dumps(prefixes), ex=86400)
 
         return prefixes
