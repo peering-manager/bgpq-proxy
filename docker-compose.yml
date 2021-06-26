@@ -1,0 +1,14 @@
+version: "3.7"
+
+services:
+  redis:
+    image: redis:6-alpine
+
+  bgpq-proxy:
+    image: bgpq-proxy:latest
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+    ports:
+      - 5000:5000
