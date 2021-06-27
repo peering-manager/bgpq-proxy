@@ -3,7 +3,7 @@ import os
 from flask import Flask
 from flask_restful import Api
 
-from bgpqproxy.utils.bgpq import BGPqAS, BGPqASSet
+from bgpqproxy.api import BGPqAS, BGPqASList, BGPqASSet, BGPqASSetList
 
 
 def create_app(test_config=None):
@@ -13,7 +13,9 @@ def create_app(test_config=None):
     )
 
     api = Api(app)
+    api.add_resource(BGPqASList, "/bgpq/as/")
     api.add_resource(BGPqAS, "/bgpq/as/<string:asn>")
+    api.add_resource(BGPqASSetList, "/bgpq/as-set/")
     api.add_resource(BGPqASSet, "/bgpq/as-set/<string:as_set>")
 
     return app
