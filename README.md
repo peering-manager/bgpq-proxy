@@ -108,3 +108,13 @@ Response:
 A specific optional parameter to limit the depth while resolving the AS-SET
 prefix list can be passed. Use `?depth=<value>` where value is a positive
 interger, `0` meaning no depth limit.
+
+## Docker
+
+A `Dockerfile` and Docker Compose file are provided to quickly turn up
+bgpq-proxy.
+
+```
+docker build -t bgpq-proxy .
+docker compose up
+```
