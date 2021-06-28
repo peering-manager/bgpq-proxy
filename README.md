@@ -8,18 +8,48 @@ This project relies on Python with Flask and Redis as caching database.
 
 ## Calling The API
 
-The current implementation exposes two different endpoints:
+The current implementation exposes four different endpoints:
 
-* one to get the prefixes based on an ASN
-* one to get the prefixes based on an AS-SET
+* get list of cached ASNs
+* get list of cached AS-SET
+* get prefixes based on an ASN
+* get prefixes based on an AS-SET
 
-Both endpoints answer to `GET` requests and will give IPv4 and IPv6 prefix
-lists back. They also accept two optional parameters:
+All endpoints answer to `GET` requests. Endpoints fetching prefixes will give
+IPv4 and IPv6 prefix lists back. They also accept two optional parameters:
 
 * `?invalidate=1` will make the API forgot about the cached result and will
   avoid caching the new result
 * `?no_cache=1` will forbid the API to look for the result in the cache and
   cache the new result
+
+### Cached ASNs Endpoint
+
+Query: `GET /bgpq/asn/`
+
+Response:
+
+```json
+{
+    "asn": [
+        "AS201281"
+    ]
+}
+```
+
+### Cached AS-SETs Endpoint
+
+Query: `GET /bgpq/as-set/`
+
+Response:
+
+```json
+{
+    "as_sets": [
+        "AS-MAZOYER-EU"
+    ]
+}
+```
 
 ### ASN Endpoint
 

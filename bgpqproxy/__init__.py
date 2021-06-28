@@ -13,8 +13,8 @@ def create_app(test_config=None):
     )
 
     api = Api(app)
-    api.add_resource(BGPqASList, "/bgpq/as/")
-    api.add_resource(BGPqAS, "/bgpq/as/<string:asn>")
+    api.add_resource(BGPqASList, "/bgpq/asn/")
+    api.add_resource(BGPqAS, "/bgpq/asn/<string:asn>")
     api.add_resource(BGPqASSetList, "/bgpq/as-set/")
     api.add_resource(BGPqASSet, "/bgpq/as-set/<string:as_set>")
 
