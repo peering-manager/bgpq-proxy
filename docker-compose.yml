@@ -5,7 +5,7 @@ services:
     image: redis:6-alpine
 
   bgpq-proxy:
-    image: bgpq-proxy:latest
+    image: ghcr.io/peering-manager/bgpq-proxy:latest
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
