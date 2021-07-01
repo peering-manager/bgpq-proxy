@@ -8,3 +8,4 @@ class BaseConfig(object):
         "port": getenv("REDIS_PORT", "6379"),
         "db": getenv("REDIS_DB", "6"),
     }
+    CACHE_TIMEOUT = getenv("CACHE_TIMEOUT", 30)

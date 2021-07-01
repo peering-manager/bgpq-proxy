@@ -3,6 +3,8 @@ import logging
 import re
 from socket import AF_INET, AF_INET6
 
+from flask import current_app
+
 logger = logging.getLogger(__name__)
 
 PATTERN_AS = re.compile(r"AS[0-9]+")
@@ -11,10 +13,10 @@ PATTERN_AS_SET = re.compile(r"AS-\w+")
 
 
 class Cache(object):
-    def __init__(self, redis, bgpq, ttl=86400):
+    def __init__(self, redis, bgpq):
         self._redis = redis
         self._bgpq = bgpq
-        self._ttl = ttl
+        self._ttl = current_app.config["CACHE_TIMEOUT"]
 
     @staticmethod
     def _format_asn(asn):
