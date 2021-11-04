@@ -15,7 +15,7 @@ FROM builder AS bgpq3_builder
 WORKDIR /bgp3
 
 RUN mkdir /bgpq3 && \
-    git clone https://github.com/snar/bgpq3 . && git checkout v0.1.35 && \
+    git clone https://github.com/snar/bgpq3 . && git checkout v0.1.36 && \
     ./configure && make install 
 
 FROM builder AS bgpq4_builder
